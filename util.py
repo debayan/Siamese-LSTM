@@ -71,7 +71,8 @@ def make_w2v_embeddings(df, embedding_dim=300, empty_w2v=False):
     if empty_w2v:
         word2vec = EmptyWord2Vec
     else:
-        word2vec = KeyedVectors.load_word2vec_format("./data/GoogleNews-vectors-negative300.bin.gz", binary=True)
+        #word2vec = KeyedVectors.load_word2vec_format("./data/GoogleNews-vectors-negative300.bin", binary=True)
+        word2vec = KeyedVectors.load_word2vec_format("./data/GoogleNews-vectors-negative300.bin", binary=True)
         # word2vec = gensim.models.word2vec.Word2Vec.load("./data/Quora-Question-Pairs.w2v").wv
 
     for index, row in df.iterrows():
@@ -80,13 +81,13 @@ def make_w2v_embeddings(df, embedding_dim=300, empty_w2v=False):
             print("{:,} sentences embedded.".format(index), flush=True)
 
         # Iterate through the text of both questions of the row
-        for question in ['sentence_A', 'sentence_B']:
+        for question in ['question1', 'question2']:
 
             q2n = []  # q2n -> question numbers representation
             for word in text_to_word_list(row[question]):
                 # Check for unwanted words
-                if word in stops:
-                    continue
+                #if word in stops:
+                #    continue
 
                 # If a word is missing from word2vec model.
                 if word not in word2vec.vocab:
@@ -119,7 +120,7 @@ def make_w2v_embeddings(df, embedding_dim=300, empty_w2v=False):
 
 def split_and_zero_padding(df, max_seq_length):
     # Split to dicts
-    X = {'left': df['sentence_A_n'], 'right': df['sentence_B_n']}
+    X = {'left': df['question1_n'], 'right': df['question2_n']}
 
     # Zero padding
     for dataset, side in itertools.product([X], ['left', 'right']):

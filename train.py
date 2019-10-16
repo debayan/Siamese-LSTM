@@ -1,6 +1,6 @@
 from time import time
 import pandas as pd
-import sys
+
 import matplotlib
 
 matplotlib.use('Agg')
@@ -10,8 +10,6 @@ from sklearn.model_selection import train_test_split
 
 import tensorflow as tf
 
-from tensorflow.python.client import device_lib 
-
 from tensorflow.python.keras.models import Model, Sequential
 from tensorflow.python.keras.layers import Input, Embedding, LSTM, GRU, Conv1D, Conv2D, GlobalMaxPool1D, Dense, Dropout
 
@@ -19,19 +17,17 @@ from util import make_w2v_embeddings
 from util import split_and_zero_padding
 from util import ManDist
 
-print(device_lib.list_local_devices())
-
 # File paths
-TRAIN_CSV = './data/lcq2train.tsv'
+TRAIN_CSV = './data/lcq2train1.csv'
 
 # Load training set
-train_df = pd.read_table(TRAIN_CSV, header=None, names=['sentence_A', 'sentence_B', 'relatedness_score'], skip_blank_lines=True)
-for q in ['sentence_A', 'sentence_B']:
+train_df = pd.read_csv(TRAIN_CSV)
+for q in ['question1', 'question2']:
     train_df[q + '_n'] = train_df[q]
 
 # Make word2vec embeddings
 embedding_dim = 300
-max_seq_length = 200
+max_seq_length = 50
 use_w2v = True
 
 train_df, embeddings = make_w2v_embeddings(train_df, embedding_dim=embedding_dim, empty_w2v=not use_w2v)
@@ -40,8 +36,8 @@ train_df, embeddings = make_w2v_embeddings(train_df, embedding_dim=embedding_dim
 validation_size = int(len(train_df) * 0.1)
 training_size = len(train_df) - validation_size
 
-X = train_df[['sentence_A_n', 'sentence_B_n']]
-Y = train_df['relatedness_score']
+X = train_df[['question1_n', 'question2_n']]
+Y = train_df['is_duplicate']
 
 X_train, X_validation, Y_train, Y_validation = train_test_split(X, Y, test_size=validation_size)
 
@@ -84,7 +80,7 @@ left_input = Input(shape=(max_seq_length,), dtype='int32')
 right_input = Input(shape=(max_seq_length,), dtype='int32')
 
 # Pack it all up into a Manhattan Distance model
-malstm_distance = ManDist()([shared_model(left_input), shared_model(right_input)])
+malstm_distance = ManDist()([x(left_input), x(right_input)])
 model = Model(inputs=[left_input, right_input], outputs=[malstm_distance])
 
 if gpus >= 2:
