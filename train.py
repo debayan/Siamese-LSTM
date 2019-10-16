@@ -1,6 +1,6 @@
 from time import time
 import pandas as pd
-
+import sys
 import matplotlib
 
 matplotlib.use('Agg')
@@ -18,16 +18,14 @@ from util import split_and_zero_padding
 from util import ManDist
 
 # File paths
-TRAIN_CSV = './data/train.csv'
+TRAIN_CSV = './data/lcq2train.tsv'
 
 # Load training set
-train_df = pd.read_csv(TRAIN_CSV)
-for q in ['question1', 'question2']:
-    train_df[q + '_n'] = train_df[q]
+train_df = pd.read_table(TRAIN_CSV, header=None, names=['sentence_A', 'sentence_B', 'relatedness_score'], skip_blank_lines=True)
 
 # Make word2vec embeddings
 embedding_dim = 300
-max_seq_length = 20
+max_seq_length = 200
 use_w2v = True
 
 train_df, embeddings = make_w2v_embeddings(train_df, embedding_dim=embedding_dim, empty_w2v=not use_w2v)
@@ -36,8 +34,8 @@ train_df, embeddings = make_w2v_embeddings(train_df, embedding_dim=embedding_dim
 validation_size = int(len(train_df) * 0.1)
 training_size = len(train_df) - validation_size
 
-X = train_df[['question1_n', 'question2_n']]
-Y = train_df['is_duplicate']
+X = train_df[['sentence_A', 'sentence_B']]
+Y = train_df['relatedness_score']
 
 X_train, X_validation, Y_train, Y_validation = train_test_split(X, Y, test_size=validation_size)
 
@@ -55,7 +53,7 @@ assert len(X_train['left']) == len(Y_train)
 # --
 
 # Model variables
-gpus = 2
+gpus = 1
 batch_size = 1024 * gpus
 n_epoch = 50
 n_hidden = 50
